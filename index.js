@@ -6,6 +6,7 @@ const NUM_TILES_Y = HEIGHT/TILE_SIZE;
 const NUM_TILES = NUM_TILES_X * NUM_TILES_Y;
 const STEP_INTERVAL = 100;
 
+let startButton = document.getElementById('start-button');
 let canvas = document.getElementById('canvas');
 let context = canvas.getContext('2d');
 
@@ -14,10 +15,9 @@ let posY = Math.floor(NUM_TILES_Y/2);
 let direction = 'N';
 let oldDirection = 'N';
 let buffer = [];
-let nextStepIncrease = false;
+let ateFood = false;
 
-let foodX = 0;
-let foodY = 0;
+let foodX, foodY;
 
 let score = 0;
 
@@ -26,67 +26,35 @@ function drawSnakePiece(x, y) {
     context.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 }
 
+function drawDigestedFood(x, y) {
+    context.fillStyle = '#FF0000';
+
+    context.beginPath();
+    context.arc((x+0.5) * TILE_SIZE, (y+0.5) * TILE_SIZE, TILE_SIZE/4, 0, 2*Math.PI, false);
+    context.closePath();
+
+    context.fill();
+}
+
 function clearTile(x, y) {
     context.fillStyle = "#FFFFFF";
     context.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 }
 
-function step() {
-    console.log("test!");
-
-    oldDirection = direction;
-
-    if (!nextStepIncrease) {
-        let tailPos = buffer.shift();
-        if (tailPos) clearTile(tailPos[0], tailPos[1]);
-    }
-    else nextStepIncrease = false;
-
-    if (direction === 'N') posY--;
-    else if (direction === 'E') posX++;
-    else if (direction === 'S') posY++;
-    else if (direction === 'W') posX--;
-
-    // Check if self is hit.
+function tileHasSnakePiece(x, y) {
     for (let bufferElement of buffer)
-        if (bufferElement.toString() === [posX, posY].toString())
-            die(false);
-
-    // Check if side is hit.
-    if (posX >= NUM_TILES_X || posX < 0 || posY >= NUM_TILES_Y || posY < 0)
-        die(false);
-
-    // Check if food is hit.
-    if (posX === foodX && posY === foodY) {
-        score++;
-        nextStepIncrease = true;
-    }
-
-    drawSnakePiece(posX, posY);
-    buffer.push([posX, posY]);
-
-    if (nextStepIncrease) {
-        // If we have filled up the whole board, we win!
-        if (buffer.length === NUM_TILES) {
-            die(true);
-            return;
-        }
-        addFood();
-    }
+        if (bufferElement.toString() === [x, y].toString())
+            return true;
+    return false;
 }
 
 function addFood() {
     // We have to make sure to not place a piece of food in an occupied tile.
-    let good = false;
-    while (!good) {
+    do {
         foodX = Math.floor(Math.random() * NUM_TILES_X);
         foodY = Math.floor(Math.random() * NUM_TILES_Y);
-
-        good = true;
-        for (let bufferElement of buffer)
-            if (bufferElement.toString() === [foodX, foodY].toString())
-                good = false;
     }
+    while (tileHasSnakePiece(foodX, foodY));
 
     context.fillStyle = "#FF0000";
     context.fillRect(foodX * TILE_SIZE, foodY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -98,13 +66,60 @@ function die(win) {
     window.location.reload();
 }
 
-document.addEventListener('keydown', function(event) {
-         if (event.keyCode === 37 && oldDirection !== 'E') direction = 'W';
-    else if (event.keyCode === 38 && oldDirection !== 'S') direction = 'N';
-    else if (event.keyCode === 39 && oldDirection !== 'W') direction = 'E';
-    else if (event.keyCode === 40 && oldDirection !== 'N') direction = 'S';
+function step() {
+    oldDirection = direction;
+
+    if (!ateFood) {
+        let tailPos = buffer.shift();
+        if (tailPos) clearTile(tailPos[0], tailPos[1]);
+    }
+    else ateFood = false;
+
+    if (direction === 'N') posY--;
+    else if (direction === 'E') posX++;
+    else if (direction === 'S') posY++;
+    else if (direction === 'W') posX--;
+
+    // Check if self is hit.
+    if (tileHasSnakePiece(posX, posY)) die(false);
+
+    // Check if side is hit.
+    if (posX >= NUM_TILES_X || posX < 0 || posY >= NUM_TILES_Y || posY < 0)
+        die(false);
+
+    // Check if food is hit.
+    if (posX === foodX && posY === foodY) {
+        score++;
+        ateFood = true;
+    }
+
+    drawSnakePiece(posX, posY);
+    buffer.push([posX, posY]);
+
+    if (ateFood) {
+        // If we have filled up the whole board, we win!
+        if (buffer.length === NUM_TILES) {
+            die(true);
+            return;
+        }
+
+        drawDigestedFood(posX, posY);
+        addFood();
+    }
+}
+
+startButton.addEventListener('click', function () {
+    startButton.style.display = 'none';
+
+    setInterval(step, STEP_INTERVAL);
+
+    document.addEventListener('keydown', function(event) {
+             if (event.keyCode === 37 && oldDirection !== 'E') direction = 'W';
+        else if (event.keyCode === 38 && oldDirection !== 'S') direction = 'N';
+        else if (event.keyCode === 39 && oldDirection !== 'W') direction = 'E';
+        else if (event.keyCode === 40 && oldDirection !== 'N') direction = 'S';
+    });
 });
 
-setInterval(step, STEP_INTERVAL);
 step();
 addFood();

@@ -5,3 +5,10 @@ body {
 #canvas {
     border: 5px solid black;
 }
+
+#start-button {
+    border: 5px solid black;
+    padding: 25px;
+    background: none;
+    font-weight: bold;
+}
