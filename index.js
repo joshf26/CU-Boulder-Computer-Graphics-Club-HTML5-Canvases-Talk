@@ -1,14 +1,12 @@
-const WIDTH = 500;
-const HEIGHT = 500;
+const NUM_TILES_X = 20;
+const NUM_TILES_Y = 20;
 const TILE_SIZE = 25;
-const NUM_TILES_X = WIDTH/TILE_SIZE;
-const NUM_TILES_Y = HEIGHT/TILE_SIZE;
-const NUM_TILES = NUM_TILES_X * NUM_TILES_Y;
 const STEP_INTERVAL = 100;
+const NUM_TILES = NUM_TILES_X * NUM_TILES_Y;
 
-let startButton = document.getElementById('start-button');
-let canvas = document.getElementById('canvas');
-let context = canvas.getContext('2d');
+const startButton = document.getElementById('start-button');
+const canvas = document.getElementById('canvas');
+const context = canvas.getContext('2d');
 
 let posX = Math.floor(NUM_TILES_X/2);
 let posY = Math.floor(NUM_TILES_Y/2);
@@ -16,9 +14,7 @@ let direction = 'N';
 let oldDirection = 'N';
 let buffer = [];
 let ateFood = false;
-
 let foodX, foodY;
-
 let score = 0;
 
 function drawSnakePiece(x, y) {
@@ -42,7 +38,7 @@ function clearTile(x, y) {
 }
 
 function tileHasSnakePiece(x, y) {
-    for (let bufferElement of buffer)
+    for (const bufferElement of buffer)
         if (bufferElement.toString() === [x, y].toString())
             return true;
     return false;
@@ -63,14 +59,17 @@ function addFood() {
 function die(win) {
     if (win) alert('You win! Score: ' + score);
     else alert('You lose! Score: ' + score);
+
     window.location.reload();
+
+    throw new Error();
 }
 
 function step() {
     oldDirection = direction;
 
     if (!ateFood) {
-        let tailPos = buffer.shift();
+        const tailPos = buffer.shift();
         if (tailPos) clearTile(tailPos[0], tailPos[1]);
     }
     else ateFood = false;
@@ -81,7 +80,8 @@ function step() {
     else if (direction === 'W') posX--;
 
     // Check if self is hit.
-    if (tileHasSnakePiece(posX, posY)) die(false);
+    if (tileHasSnakePiece(posX, posY))
+        die(false);
 
     // Check if side is hit.
     if (posX >= NUM_TILES_X || posX < 0 || posY >= NUM_TILES_Y || posY < 0)
@@ -98,10 +98,8 @@ function step() {
 
     if (ateFood) {
         // If we have filled up the whole board, we win!
-        if (buffer.length === NUM_TILES) {
+        if (buffer.length === NUM_TILES)
             die(true);
-            return;
-        }
 
         drawDigestedFood(posX, posY);
         addFood();
